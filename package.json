@@ -1,0 +1,18 @@
+{
+  "name": "TodoProject",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "node_modules/react-native/packager/packager.sh"
+  },
+  "dependencies": {
+    "react-native": "^0.3.0"
+  },
+  "devDependencies": {
+    "events": "^1.0.2",
+    "flux": "^2.0.1",
+    "key-mirror": "^1.0.0",
+    "keymirror": "^0.1.1",
+    "object-assign": "^2.0.0"
+  }
+}

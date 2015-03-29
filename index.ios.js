@@ -14,10 +14,7 @@ var TodoConstants = keyMirror({
   TODO_CREATE: null,
   TODO_COMPLETE: null,
   TODO_DESTROY: null,
-  TODO_DESTROY_COMPLETED: null,
-  TODO_TOGGLE_COMPLETE_ALL: null,
-  TODO_UNDO_COMPLETE: null,
-  TODO_UPDATE_TEXT: null
+  TODO_UNDO_COMPLETE: null
 });
 
 // TodoStore.jsx
@@ -37,30 +34,10 @@ function create(text) {
 function update(id, updates) {
   _todos[id] = assign({}, _todos[id], updates);
 }
-function updateAll(updates) {
-  for (var id in _todos) {
-    update(id, updates);
-  }
-}
 function destroy(id) {
   delete _todos[id];
 }
-function destroyCompleted() {
-  for (var id in _todos) {
-    if (_todos[id].complete) {
-      destroy(id);
-    }
-  }
-}
 var TodoStore = assign({}, EventEmitter.prototype, {
-  areAllComplete: function() {
-    for (var id in _todos) {
-      if (!_todos[id].complete) {
-        return false;
-      }
-    }
-    return true;
-  },
   getAll: function() {
     /* ObjectをArrayにしてから返す。ウェブのReactでは必要ない。
     ListViewにした時にkeyで見ている可能性高い。
@@ -92,14 +69,6 @@ AppDispatcher.register(function(action) {
         TodoStore.emitChange();
       }
       break;
-    case TodoConstants.TODO_TOGGLE_COMPLETE_ALL:
-      if (TodoStore.areAllComplete()) {
-        updateAll({complete: false});
-      } else {
-        updateAll({complete: true});
-      }
-      TodoStore.emitChange();
-      break;
     case TodoConstants.TODO_UNDO_COMPLETE:
       update(action.id, {complete: false});
       TodoStore.emitChange();
@@ -108,20 +77,8 @@ AppDispatcher.register(function(action) {
       update(action.id, {complete: true});
       TodoStore.emitChange();
       break;
-    case TodoConstants.TODO_UPDATE_TEXT:
-      text = action.text.trim();
-      if (text !== '') {
-        update(action.id, {text: text});
-        TodoStore.emitChange();
-      }
-      break;
     case TodoConstants.TODO_DESTROY:
       destroy(action.id);
-      TodoStore.emitChange();
-      break;
-
-    case TodoConstants.TODO_DESTROY_COMPLETED:
-      destroyCompleted();
       TodoStore.emitChange();
       break;
     default:
@@ -133,13 +90,6 @@ var TodoActions = {
   create: function(text) {
     AppDispatcher.dispatch({
       actionType: TodoConstants.TODO_CREATE,
-      text: text
-    });
-  },
-  updateText: function(id, text) {
-    AppDispatcher.dispatch({
-      actionType: TodoConstants.TODO_UPDATE_TEXT,
-      id: id,
       text: text
     });
   },
@@ -216,7 +166,7 @@ var MainSection = React.createClass({
   render: function() {
     return (
       <View>
-        <ListView dataSource={this.props.todos} renderRow={this.renderItem} style={styles.listView}/>
+        <ListView dataSource={this.props.todos} renderRow={this.renderItem} />
       </View>
     );
   },
@@ -229,14 +179,13 @@ var MainSection = React.createClass({
 var TodoItem = React.createClass({
   render: function() {
     var todo = this.props.todo;
-    var done;
-    done = (todo.complete) ? <Text>完了</Text> : <Text>未完了</Text>;
+    var todoItemStyle;
+    todoItemStyle = (todo.complete) ? styles.TodoItemDone : styles.TodoItem;
     return (
-      <View style={styles.container}>
-        <Text onPress={() => this._onToggleComplete(todo)}>✔︎</Text>
+      <View style={todoItemStyle}>
         <Text style={styles.content}>{todo.text}</Text>
-        {done}
-        <Text onPress={() => this._onDestroy(todo)}>×</Text>
+        <Text onPress={() => this._onToggleComplete(todo)}>[完了]</Text>
+        <Text onPress={() => this._onDestroy(todo)}>[削除]</Text>
       </View>
     ); 
   },
@@ -292,15 +241,21 @@ var styles = StyleSheet.create({
   TodoApp: {
     paddingTop: 20
   },
-  listView: {
-    backgroundColor: '#FFFFFF',
+  TodoItem: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF'
   },
-  container: {
+  TodoItemDone: {
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
+    opacity: .3
+    
   },
   content: {
     flex: 1,
@@ -310,6 +265,5 @@ var styles = StyleSheet.create({
 });
 
 ////////////////////////////////////////////////////////////////////// Registry
-// app.jsxに相当する感じか
+// app.jsxのようなもの
 AppRegistry.registerComponent('TodoProject', () => TodoApp);
-// AppRegistry.registerComponent('TodoProject', () => TodoList);

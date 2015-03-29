@@ -1,15 +1,16 @@
 'use strict';
 var React = require('react-native');
+var ReactPropTypes = React.PropTypes;
 var assign = require('object-assign');
 var keyMirror = require('key-mirror');
 var EventEmitter = require('events').EventEmitter;
 
-// AppDispatcher
+// AppDispatcher.jsx
 var Dispatcher = require('flux').Dispatcher;
 var AppDispatcher = new Dispatcher();
 
-// TodoConstances
-var TodoConstances = keyMirror({
+// TodoConstants.jsx
+var TodoConstants = keyMirror({
   TODO_CREATE: null,
   TODO_COMPLETE: null,
   TODO_DESTROY: null,
@@ -19,10 +20,11 @@ var TodoConstances = keyMirror({
   TODO_UPDATE_TEXT: null
 });
 
-// Store
+// TodoStore.jsx
 var CHANGE_EVENT = 'change';
 
 var _todos = {};
+// var _todos = {i7ufaqtt: {complete: true, id: "i7ufaqtt", text: "cadsca"}, i7uffpt6: {complete: false, id: "i7uffpt6", text: "cadscs"}, i7ufhkvy: {complete: false, id: "i7ufhkvy", text: "casdcz"}, i7ufmefz: {complete: false, id: "i7ufmefz", text: "casdca"}};
 
 function create(text) {
   var id = (+new Date() + Math.floor(Math.random() * 999999)).toString(36);
@@ -60,7 +62,14 @@ var TodoStore = assign({}, EventEmitter.prototype, {
     return true;
   },
   getAll: function() {
-    return _todos;
+    /* ObjectをArrayにしてから返す。ウェブのReactでは必要ない。
+    ListViewにした時にkeyで見ている可能性高い。
+    Objectのプロパティを変更してもTodoItemのrenderが動かなかった */
+    var todos = [];
+    for(var key in _todos) {
+      todos.push(_todos[key]);
+    }
+    return todos;
   },
   emitChange: function() {
     this.emit(CHANGE_EVENT);
@@ -119,7 +128,7 @@ AppDispatcher.register(function(action) {
   }
 });
 
-// Action
+// TodoActions.jsx
 var TodoActions = {
   create: function(text) {
     AppDispatcher.dispatch({
@@ -156,64 +165,135 @@ var TodoActions = {
   }
 };
 
-// component
+// components ////////////////////////////////////////////
 var {
   AppRegistry,
   StyleSheet,
   Text,
+  TextInput,
   View,
-  ListView,
-  Image,
-  TouchableWithoutFeedback,
-  WebView
+  ListView
 } = React;
 
-var todos = [{
-    content: 'aaaa'
-  }, {
-    content: 'bbb'
-  }, {
-    content: 'ccc'
-  }
-];
-
-var TodoList = React.createClass({
+// TodoApp.react.jsx
+var TodoApp = React.createClass({
   getInitialState: function() {
     return {
-      items: new ListView.DataSource({
+      todos: new ListView.DataSource({
         rowHasChanged: (row1, row2) => row1 !== row2,
       })
     };
   },
   componentDidMount: function() {
     this.setState({
-      items: this.state.items.cloneWithRows(todos)
+      todos: this.state.todos.cloneWithRows(TodoStore.getAll())
     });
+    TodoStore.addChangeListener(this._onChange);
+  },
+  componentWillUnmount: function() {
+    TodoStore.removeChangeListener(this._onChange);
   },
   render: function() {
-    return <ListView dataSource={this.state.items} renderRow={this.renderItem} style={styles.listView}/>;
+  	return (
+      <View style={styles.TodoApp}>
+        <Header />
+        <MainSection todos={this.state.todos} />
+      </View>
+  	);
   },
-  renderItem: function(item, sectionID, rowID) {
+  _onChange: function() {
+    this.setState({
+      todos: this.state.todos.cloneWithRows(TodoStore.getAll())
+    });
+  }
+});
+
+// MainSection.react.jsx
+var MainSection = React.createClass({
+  propTypes: {
+    todos: ReactPropTypes.object.isRequired
+  },
+  render: function() {
     return (
-      <View style={styles.container}>
-        <Text style={styles.content}>{item.content}</Text>
-        <Text onPress={() => this.onPressed()}>+</Text>
+      <View>
+        <ListView dataSource={this.props.todos} renderRow={this.renderItem} style={styles.listView}/>
       </View>
     );
   },
-  onPressed: function() {
-    todos.push({content: 'ddd'});
+  renderItem: function(todo) {
+    return <TodoItem todo={todo} />;
+  }
+});
+
+// TodoItem.react.jsx
+var TodoItem = React.createClass({
+  render: function() {
+    var todo = this.props.todo;
+    var done;
+    done = (todo.complete) ? <Text>完了</Text> : <Text>未完了</Text>;
+    return (
+      <View style={styles.container}>
+        <Text onPress={() => this._onToggleComplete(todo)}>✔︎</Text>
+        <Text style={styles.content}>{todo.text}</Text>
+        {done}
+        <Text onPress={() => this._onDestroy(todo)}>×</Text>
+      </View>
+    ); 
+  },
+  _onToggleComplete: function(todo) {
+    TodoActions.toggleComplete(todo);
+  },
+  _onDestroy: function(todo) {
+    TodoActions.destroy(todo.id);
+  }
+});
+
+// Header.react.jsx
+var Header = React.createClass({
+  render: function() {
+    return (
+      <View>
+        <TodoTextInput />
+      </View>
+    );
+  }
+});
+
+// TodoTextInput.react.jsx
+var TodoTextInput = React.createClass({
+  getInitialState: function() {
+    return {
+      value: ''
+    }
+  },
+  render: function() {
+    return (
+      <View>
+        <TextInput
+          style={{height: 40, borderColor: 'gray', borderWidth: 1}}
+          onChangeText={(text) => this.setState({value: text})}
+          onBlur={this._save}
+          value={this.state.value}
+        />
+      </View> 
+    );
+  },
+  _save: function() {
+    var text = this.state.value;
+    if(text) TodoActions.create(text);
     this.setState({
-      items: this.state.items.cloneWithRows(todos)
+      value: ''
     });
   }
 });
 
 /////////////////////////////////////////////////////////////////////// style
 var styles = StyleSheet.create({
+  TodoApp: {
+    paddingTop: 20
+  },
   listView: {
     backgroundColor: '#FFFFFF',
-    paddingTop: 20
   },
   container: {
     flex: 1,
@@ -231,4 +311,5 @@ var styles = StyleSheet.create({
 
 ////////////////////////////////////////////////////////////////////// Registry
 // app.jsxに相当する感じか
-AppRegistry.registerComponent('TodoProject', () => TodoList);
+AppRegistry.registerComponent('TodoProject', () => TodoApp);
+// AppRegistry.registerComponent('TodoProject', () => TodoList);

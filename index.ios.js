@@ -21,7 +21,6 @@ var TodoConstants = keyMirror({
 var CHANGE_EVENT = 'change';
 
 var _todos = {};
-// var _todos = {i7ufaqtt: {complete: true, id: "i7ufaqtt", text: "cadsca"}, i7uffpt6: {complete: false, id: "i7uffpt6", text: "cadscs"}, i7ufhkvy: {complete: false, id: "i7ufhkvy", text: "casdcz"}, i7ufmefz: {complete: false, id: "i7ufmefz", text: "casdca"}};
 
 function create(text) {
   var id = (+new Date() + Math.floor(Math.random() * 999999)).toString(36);
@@ -183,7 +182,7 @@ var TodoItem = React.createClass({
     todoItemStyle = (todo.complete) ? styles.TodoItemDone : styles.TodoItem;
     return (
       <View style={todoItemStyle}>
-        <Text style={styles.content}>{todo.text}</Text>
+        <Text style={styles.text}>{todo.text}</Text>
         <Text onPress={() => this._onToggleComplete(todo)}>[完了]</Text>
         <Text onPress={() => this._onDestroy(todo)}>[削除]</Text>
       </View>
@@ -219,17 +218,18 @@ var TodoTextInput = React.createClass({
     return (
       <View>
         <TextInput
-          style={{height: 40, borderColor: 'gray', borderWidth: 1}}
+          style={styles.TodoTextInput}
           onChangeText={(text) => this.setState({value: text})}
           onBlur={this._save}
+          placeholder={'What needs to be done?'}
           value={this.state.value}
         />
       </View> 
     );
-  },
-  _save: function() {
-    var text = this.state.value;
-    if(text) TodoActions.create(text);
+},
+_save: function() {
+  var text = this.state.value;
+  if(text) TodoActions.create(text);
     this.setState({
       value: ''
     });
@@ -239,14 +239,16 @@ var TodoTextInput = React.createClass({
 /////////////////////////////////////////////////////////////////////// style
 var styles = StyleSheet.create({
   TodoApp: {
-    paddingTop: 20
+    padding: 20,
+    paddingTop: 40
   },
   TodoItem: {
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF'
+    backgroundColor: '#FFFFFF',
+    height: 58
   },
   TodoItemDone: {
     flex: 1,
@@ -254,16 +256,22 @@ var styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    opacity: .3
-    
-  },
-  content: {
-    flex: 1,
     height: 58,
-    textAlign: 'left'
+    opacity: .3
+  },
+  text: {
+    flex: 1,
+    textAlign: 'left',
+    fontSize: 16
+  },
+  TodoTextInput: {
+    height: 40,
+    backgroundColor: '#EEEEEE',
+    padding: 10,
+    fontSize: 16
   }
 });
 
 ////////////////////////////////////////////////////////////////////// Registry
-// app.jsxのようなもの
+// app.jsxに当たる部分
 AppRegistry.registerComponent('TodoProject', () => TodoApp);

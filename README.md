@@ -6,6 +6,7 @@ React（ウェブ）編はこちら
 ![ReactNative-flux-todo](http://khirayama.github.io/ReactNative-flux-todo/images/ReactNative-flux-todo.png)
 
 ## 実行手順
+
 下記を実行してreact-native-cliをグローバルにインストール。
 nodeがない場合は[ここ](https://nodejs.org/)を参考にインストールしておきましょう！
 
